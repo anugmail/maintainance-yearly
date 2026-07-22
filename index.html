@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>งานบำรุงรักษาตามวาระ (To-be) — Maintain-D (Mock)</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300..600,0..1,0" rel="stylesheet">
+<link rel="stylesheet" href="design-system/tokens.css">
+<link rel="stylesheet" href="design-system/components.css">
+<script src="ui-components.js"></script><!-- shared components (window.UIC) -->
+<style>
+  /* ---------- เฉพาะหน้านี้ — ไม่มีสี hardcode ---------- */
+  .wstep{cursor:pointer}
+  .wstep.locked{opacity:.55;cursor:not-allowed}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <div class="vlogo">VMS<em>+</em></div>
+    <div class="nv on" id="nav-flow" title="Flow"><span class="ms">event_note</span></div>
+    <a class="nv" href="admin.html" id="nav-admin" title="Admin — ข้อมูลหลัก"><span class="ms">settings</span></a>
+  </aside>
+
+  <div class="work">
+    <div class="topbar">
+      <span class="ms">account_circle</span>
+      <span>สายตรวจเอง (กบก.)</span>
+    </div>
+
+    <main class="content">
+      <div class="draft">Prototype (Mock) — งานบำรุงรักษาตามวาระ (To-be)</div>
+      <h1 class="page-title">งานบำรุงรักษาตามวาระ (To-be)</h1>
+      <div id="stepper"></div>
+      <div id="phase"></div>
+    </main>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="mock-yearly.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
