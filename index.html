@@ -15,6 +15,14 @@
   /* ---------- เฉพาะหน้านี้ — ไม่มีสี hardcode ---------- */
   .wstep{cursor:pointer}
   .wstep.locked{opacity:.55;cursor:not-allowed}
+  /* ตารางสรุป item: fixed layout ให้คอลัมน์ตรงกันทั้งในตารางและข้ามตาราง (อะไหล่/น้ำมัน/ไส้กรอง) */
+  .itbl{table-layout:fixed}
+  .itbl th,.itbl td{overflow:hidden;text-overflow:ellipsis}
+  .itbl th:nth-child(1),.itbl td:nth-child(1){width:34%}
+  .itbl th:nth-child(2),.itbl td:nth-child(2),
+  .itbl th:nth-child(3),.itbl td:nth-child(3),
+  .itbl th:nth-child(4),.itbl td:nth-child(4){width:16%;text-align:center}
+  .itbl th:nth-child(5),.itbl td:nth-child(5){width:18%}
   /* sub-stepper เล็ก (wizard ภายในเฟส 1) — ใช้ tokens เดิม แค่ย่อขนาด */
   .wsteps.sm{margin-bottom:18px}
   .wsteps.sm .wstep{padding:10px 12px;font-size:12.5px;gap:8px}

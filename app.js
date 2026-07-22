@@ -335,7 +335,7 @@ function renderStep3(plan) {
     return `
       <div class="sect">${esc(MYD.CATEGORY_LABELS[cat])}</div>
       <div class="tblwrap">
-        <table class="tbl">
+        <table class="tbl itbl">
           <thead><tr><th>ชื่อ</th><th>ต่อคัน</th><th>จำนวนรถ</th><th>รวม</th><th>หน่วย</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
@@ -585,7 +585,7 @@ function renderProcStep1(plan) {
     return `
       <div class="sect">${esc(MYD.CATEGORY_LABELS[cat])}</div>
       <div class="tblwrap">
-        <table class="tbl">
+        <table class="tbl itbl">
           <thead><tr><th>ชื่อ</th><th>ต่อคัน</th><th>จำนวนรถ</th><th>รวม</th><th>หน่วย</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
