@@ -15,6 +15,11 @@
   /* ---------- เฉพาะหน้านี้ — ไม่มีสี hardcode ---------- */
   .wstep{cursor:pointer}
   .wstep.locked{opacity:.55;cursor:not-allowed}
+  /* sub-stepper เล็ก (wizard ภายในเฟส 1) — ใช้ tokens เดิม แค่ย่อขนาด */
+  .wsteps.sm{margin-bottom:18px}
+  .wsteps.sm .wstep{padding:10px 12px;font-size:12.5px;gap:8px}
+  .wsteps.sm .wstep .num{width:24px;height:24px;font-size:12px}
+  .wsteps.sm .wstep .lbl{display:block}
 </style>
 </head>
 <body>
