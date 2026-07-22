@@ -3,7 +3,7 @@
 // window.MYD (mock-yearly.js) — MYD.loadMaster()/saveMaster() persist to
 // localStorage (key: maintaind.yearly.master.v1).
 
-const state = { tab: 'vehicles' };
+const state = { tab: 'vehicles', regionFilter: 'all' };
 
 const VEHICLE_TYPES = ['รถกระเช้า', 'รถเครน', 'รถขุด'];
 const ITEM_CATEGORY_ORDER = ['part', 'oil', 'filter'];
@@ -47,12 +47,15 @@ function renderBody() {
 // ================= VEHICLES: READ =================
 function renderVehicles() {
   const { vehicles } = MYD.loadMaster();
+  const regionFilter = state.regionFilter;
+  const filtered = regionFilter === 'all' ? vehicles : vehicles.filter(v => v.region === Number(regionFilter));
 
-  const rows = vehicles.map(v => `
+  const rows = filtered.map(v => `
     <tr data-id="${esc(v.id)}">
       <td>${esc(v.plate)}</td>
       <td>${esc(v.vehicleType)}</td>
       <td>${esc(MYD.CRITERIA_LABELS[v.criteria] || v.criteria)}</td>
+      <td>เขต ${esc(v.region)} <span class="rcell-zone">(${esc(MYD.ZONE_LABELS[MYD.regionZone(v.region)])})</span></td>
       <td><span class="badge ${statusBadgeClass(v.status)}">${esc(MYD.STATUS_LABELS[v.status] || v.status)}</span></td>
       <td class="num">${esc(v.mileage)}</td>
       <td class="num">${esc(v.engineHours)}</td>
@@ -65,18 +68,30 @@ function renderVehicles() {
     </tr>`).join('');
 
   $('adminBody').innerHTML = `
-    <div class="actions" style="padding-top:0;margin-bottom:2px">
+    <div class="actions" style="padding-top:0;margin-bottom:2px;justify-content:space-between">
+      <div class="f" style="margin:0;max-width:220px">
+        <div class="in"><span class="ms">filter_alt</span>
+          <select id="fRegionFilter">
+            <option value="all" ${regionFilter === 'all' ? 'selected' : ''}>ทุกเขต</option>
+            ${MYD.REGIONS.map(r => `<option value="${r.id}" ${String(regionFilter) === String(r.id) ? 'selected' : ''}>${esc(r.name)}</option>`).join('')}
+          </select>
+        </div>
+      </div>
       <button class="btn btn-p" id="btnAddVehicle">+ เพิ่มรถ</button>
     </div>
     <div class="tblwrap">
       <table class="tbl">
         <thead><tr>
-          <th>ทะเบียน</th><th>ประเภท</th><th>เกณฑ์</th><th>สถานะ</th><th>เลขไมล์</th><th>ชม.เครื่อง</th><th>จัดการ</th>
+          <th>ทะเบียน</th><th>ประเภท</th><th>เกณฑ์</th><th>เขต</th><th>สถานะ</th><th>เลขไมล์</th><th>ชม.เครื่อง</th><th>จัดการ</th>
         </tr></thead>
-        <tbody>${rows || `<tr><td colspan="7" class="empty">ไม่มีรถในระบบ</td></tr>`}</tbody>
+        <tbody>${rows || `<tr><td colspan="8" class="empty">ไม่มีรถในเขตที่เลือก</td></tr>`}</tbody>
       </table>
     </div>`;
 
+  $('fRegionFilter').addEventListener('change', e => {
+    state.regionFilter = e.target.value;
+    renderVehicles();
+  });
   $('btnAddVehicle').addEventListener('click', () => openVehicleModal(null));
   $('adminBody').querySelectorAll('[data-act="edit-vehicle"]').forEach(b =>
     b.addEventListener('click', () => openVehicleModal(b.dataset.id)));
@@ -97,7 +112,8 @@ function deleteVehicle(id) {
 function openVehicleModal(id) {
   const master = MYD.loadMaster();
   const editing = id ? master.vehicles.find(v => v.id === id) : null;
-  const v = editing || { plate: '', vehicleType: VEHICLE_TYPES[0], criteria: 'truck', status: 'available', mileage: 0, engineHours: 0 };
+  const defaultRegion = state.regionFilter !== 'all' ? Number(state.regionFilter) : 1;
+  const v = editing || { plate: '', vehicleType: VEHICLE_TYPES[0], criteria: 'truck', region: defaultRegion, status: 'available', mileage: 0, engineHours: 0 };
 
   const ov = document.createElement('div');
   ov.className = 'modal-ov';
@@ -109,6 +125,7 @@ function openVehicleModal(id) {
           <div class="f sp2"><label>ทะเบียน</label><div class="in"><span class="ms">directions_car</span><input type="text" name="plate" required value="${esc(v.plate)}"></div></div>
           <div class="f sp2"><label>ประเภท</label><div class="in"><span class="ms">category</span><select name="vehicleType">${VEHICLE_TYPES.map(t => `<option value="${esc(t)}" ${v.vehicleType === t ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></div></div>
           <div class="f sp2"><label>เกณฑ์</label><div class="in"><span class="ms">rule</span><select name="criteria">${Object.entries(MYD.CRITERIA_LABELS).map(([k, l]) => `<option value="${k}" ${v.criteria === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div></div>
+          <div class="f sp2"><label>เขต</label><div class="in"><span class="ms">map</span><select name="region">${MYD.REGIONS.map(r => `<option value="${r.id}" ${Number(v.region) === r.id ? 'selected' : ''}>${esc(r.name)} (${esc(MYD.ZONE_LABELS[r.zone])})</option>`).join('')}</select></div></div>
           <div class="f sp2"><label>สถานะ</label><div class="in"><span class="ms">flag</span><select name="status">${Object.entries(MYD.STATUS_LABELS).map(([k, l]) => `<option value="${k}" ${v.status === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div></div>
           <div class="f sp2"><label>เลขไมล์</label><div class="in"><span class="ms">speed</span><input type="number" name="mileage" min="0" value="${esc(v.mileage)}"></div></div>
           <div class="f sp2"><label>ชม.เครื่อง</label><div class="in"><span class="ms">schedule</span><input type="number" name="engineHours" min="0" value="${esc(v.engineHours)}"></div></div>
@@ -131,6 +148,7 @@ function openVehicleModal(id) {
       plate: String(fd.get('plate') || '').trim(),
       vehicleType: fd.get('vehicleType'),
       criteria: fd.get('criteria'),
+      region: Number(fd.get('region')) || 1,
       status: fd.get('status'),
       mileage: Number(fd.get('mileage')) || 0,
       engineHours: Number(fd.get('engineHours')) || 0,

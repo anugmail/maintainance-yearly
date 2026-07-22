@@ -262,11 +262,41 @@ function selectCriteria(plan, crit) {
   renderWizard(plan);
 }
 
-// ----- ขั้น 2: เลือกรถเข้าแผน -----
+// ----- ขั้น 2: เลือกรถเข้าแผน (ภาค → เขต → รถ) -----
+// state.expandedRegions: { [regionId]: true|false } — เก็บสถานะขยาย/ย่อของแต่ละเขต
+// ข้าม re-render ของ wizard ได้ (ไม่ผูกกับ plan, อยู่ใน memory เท่านั้น เหมือน state.sub)
+function regionVehiclesFor(master, plan, regionId) {
+  return master.vehicles.filter(v => v.region === regionId && v.criteria === plan.criteria);
+}
+
 function renderStep2(plan) {
-  const vehicles = MYD.loadMaster().vehicles.filter(v => v.criteria === plan.criteria);
+  if (!state.expandedRegions) state.expandedRegions = {};
+  const master = MYD.loadMaster();
+  const allVehicles = master.vehicles.filter(v => v.criteria === plan.criteria);
   const selected = new Set(plan.selectedVehicleIds || []);
-  const allSelected = vehicles.length > 0 && vehicles.every(v => selected.has(v.id));
+  const allSelected = allVehicles.length > 0 && allVehicles.every(v => selected.has(v.id));
+  const regionsSelected = new Set(allVehicles.filter(v => selected.has(v.id)).map(v => v.region));
+
+  const zonesHtml = MYD.ZONE_ORDER.map(zone => {
+    const regions = MYD.REGIONS.filter(r => r.zone === zone);
+    if (!regions.length) return '';
+    const blocks = regions.map(r => renderRegionBlock(r, master, plan, selected)).join('');
+    return `<div class="sect">${esc(MYD.ZONE_LABELS[zone])}</div>${blocks}`;
+  }).join('');
+
+  return `
+    <div class="sect">ขั้นที่ 2: เลือกรถเข้าแผน (เกณฑ์: ${esc(MYD.CRITERIA_LABELS[plan.criteria] || plan.criteria)})</div>
+    <div class="sub">เลือกแล้ว ${selected.size} คัน จาก ${regionsSelected.size} เขต</div>
+    <div class="chk" style="margin-bottom:12px">
+      <label><input type="checkbox" id="chkAllZones" ${allSelected ? 'checked' : ''} ${allVehicles.length === 0 ? 'disabled' : ''}> เลือกทั้งหมด (ทุกเขต) — ${allVehicles.length} คัน</label>
+    </div>
+    ${zonesHtml || `<div class="empty">ไม่มีรถตามเกณฑ์นี้</div>`}`;
+}
+
+function renderRegionBlock(region, master, plan, selected) {
+  const vehicles = regionVehiclesFor(master, plan, region.id);
+  const selCount = vehicles.filter(v => selected.has(v.id)).length;
+  const expanded = !!state.expandedRegions[region.id];
 
   const rows = vehicles.map(v => `
     <tr data-id="${esc(v.id)}">
@@ -277,26 +307,61 @@ function renderStep2(plan) {
     </tr>`).join('');
 
   return `
-    <div class="sect">ขั้นที่ 2: เลือกรถเข้าแผน (เกณฑ์: ${esc(MYD.CRITERIA_LABELS[plan.criteria] || plan.criteria)})</div>
-    <div class="tblwrap">
-      <table class="tbl">
-        <thead><tr>
-          <th><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="chkAll" ${allSelected ? 'checked' : ''}> เลือกทั้งหมด</label></th>
-          <th>ทะเบียน</th><th>ประเภท</th><th>สถานะ</th>
-        </tr></thead>
-        <tbody>${rows || `<tr><td colspan="4" class="empty">ไม่มีรถตามเกณฑ์นี้</td></tr>`}</tbody>
-      </table>
-    </div>
-    <div class="sub">เลือกแล้ว ${selected.size} คัน จากทั้งหมด ${vehicles.length} คัน</div>`;
+    <div class="rzone" data-region="${region.id}">
+      <div class="rzone-head" onclick="toggleRegion(${region.id})">
+        <span class="ms rzone-caret">${expanded ? 'expand_more' : 'chevron_right'}</span>
+        <b>${esc(region.name)}</b>
+        <span class="rzone-count">(เลือก ${selCount}/${vehicles.length} คัน)</span>
+        <label class="rzone-allchk" onclick="event.stopPropagation()">
+          <input type="checkbox" class="regionAllChk" data-region="${region.id}" ${vehicles.length === 0 ? 'disabled' : ''} ${vehicles.length > 0 && selCount === vehicles.length ? 'checked' : ''}> เลือกทั้งเขต
+        </label>
+      </div>
+      ${expanded ? `
+      <div class="rzone-body">
+        <div class="tblwrap">
+          <table class="tbl">
+            <thead><tr><th></th><th>ทะเบียน</th><th>ประเภท</th><th>สถานะ</th></tr></thead>
+            <tbody>${rows || `<tr><td colspan="4" class="empty">ไม่มีรถตามเกณฑ์นี้ในเขตนี้</td></tr>`}</tbody>
+          </table>
+        </div>
+      </div>` : ''}
+    </div>`;
+}
+
+function toggleRegion(regionId) {
+  if (!state.expandedRegions) state.expandedRegions = {};
+  state.expandedRegions[regionId] = !state.expandedRegions[regionId];
+  renderWizard(MYD.loadPlan());
 }
 
 function bindStep2(plan) {
-  const vehicles = MYD.loadMaster().vehicles.filter(v => v.criteria === plan.criteria);
+  const master = MYD.loadMaster();
+  const allVehicles = master.vehicles.filter(v => v.criteria === plan.criteria);
 
-  $('chkAll').addEventListener('change', e => {
-    plan.selectedVehicleIds = e.target.checked ? vehicles.map(v => v.id) : [];
-    MYD.savePlan(plan);
-    renderWizard(plan);
+  const chkAllZones = $('chkAllZones');
+  if (chkAllZones) {
+    chkAllZones.addEventListener('change', e => {
+      plan.selectedVehicleIds = e.target.checked ? allVehicles.map(v => v.id) : [];
+      MYD.savePlan(plan);
+      renderWizard(plan);
+    });
+  }
+
+  document.querySelectorAll('.regionAllChk').forEach(chk => {
+    const regionId = Number(chk.dataset.region);
+    const vehicles = regionVehiclesFor(master, plan, regionId);
+    const selectedNow = new Set(plan.selectedVehicleIds || []);
+    const selCount = vehicles.filter(v => selectedNow.has(v.id)).length;
+    chk.indeterminate = selCount > 0 && selCount < vehicles.length;
+
+    chk.addEventListener('change', e => {
+      const set = new Set(plan.selectedVehicleIds || []);
+      if (e.target.checked) vehicles.forEach(v => set.add(v.id));
+      else vehicles.forEach(v => set.delete(v.id));
+      plan.selectedVehicleIds = [...set];
+      MYD.savePlan(plan);
+      renderWizard(plan);
+    });
   });
 
   document.querySelectorAll('.rowChk').forEach(chk => {

@@ -5,7 +5,7 @@
 // node's built-in test runner without any bundler/build step.
 //
 // โครงข้อมูล (plain objects):
-// vehicle: { id, plate, vehicleType, criteria, status, mileage, engineHours }
+// vehicle: { id, plate, vehicleType, criteria, region(1-12), status, mileage, engineHours }
 // item:    { id, name, category, oilKind?, unit, appliesToTypes:[], qtyPerVehicle }
 // plan:    { planName, criteria, selectedVehicleIds:[], quarter, year, preparedConfirmed, workNumber, approvalStatus,
 //            partsRequisitioned, travelPlan:{location,dateFrom,dateTo,perDiem,lodging,travel}|null, travelConfirmed }
@@ -13,16 +13,42 @@
 const MASTER_KEY = 'maintaind.yearly.master.v1';
 const PLAN_KEY = 'maintaind.yearly.plan.v1';
 
-const SEED_VEHICLES = [
-  { id:'v1', plate:'81-2345', vehicleType:'รถกระเช้า', criteria:'truck', status:'available',        mileage:120500, engineHours:3400 },
-  { id:'v2', plate:'82-6677', vehicleType:'รถกระเช้า', criteria:'truck', status:'available',        mileage:98000,  engineHours:2900 },
-  { id:'v3', plate:'83-1122', vehicleType:'รถเครน',   criteria:'truck', status:'pending_approval', mileage:145000, engineHours:5100 },
-  { id:'v4', plate:'84-9090', vehicleType:'รถเครน',   criteria:'net',   status:'available',        mileage:76000,  engineHours:2100 },
-  { id:'v5', plate:'85-3311', vehicleType:'รถขุด',    criteria:'net',   status:'available',        mileage:60000,  engineHours:4800 },
-  { id:'v6', plate:'86-7788', vehicleType:'รถขุด',    criteria:'net',   status:'transferred',      mileage:52000,  engineHours:3900 },
-  { id:'v7', plate:'87-4455', vehicleType:'รถกระเช้า', criteria:'net',   status:'available',        mileage:88000,  engineHours:2600 },
-  { id:'v8', plate:'88-1200', vehicleType:'รถเครน',   criteria:'truck', status:'available',        mileage:132000, engineHours:4700 },
-];
+// ----- กรย. 12 เขต จัดกลุ่มเป็น 4 ภาค (mockup mapping) -----
+// เขต 1-3 เหนือ, 4-6 ตะวันออก, 7-9 ใต้, 10-12 ตะวันตก
+const ZONE_LABELS = { north:'ภาคเหนือ', east:'ภาคตะวันออก', south:'ภาคใต้', west:'ภาคตะวันตก' };
+const ZONE_ORDER = ['north', 'east', 'south', 'west'];
+
+function regionZone(r) {
+  return r <= 3 ? 'north' : r <= 6 ? 'east' : r <= 9 ? 'south' : 'west';
+}
+
+const REGIONS = Array.from({ length: 12 }, (_, i) => ({ id: i + 1, name: 'เขต ' + (i + 1), zone: regionZone(i + 1) }));
+
+// ----- seed รถ: deterministic generator (ไม่ใช้ Math.random/Date) -----
+// ~10-12 คัน/เขต (รวม ~120-144 คัน) กระจาย criteria/status/vehicleType แบบคงที่
+function genSeedVehicles() {
+  const types = ['รถกระเช้า', 'รถเครน', 'รถขุด'];
+  const out = [];
+  for (let r = 1; r <= 12; r++) {
+    const count = 10 + (r % 3);
+    for (let i = 1; i <= count; i++) {
+      const t = types[(r + i) % 3];
+      out.push({
+        id: `v-${r}-${i}`,
+        plate: `${String(r).padStart(2, '0')}-${1000 + r * 100 + i}`,
+        vehicleType: t,
+        criteria: (r + i) % 2 === 0 ? 'truck' : 'net',
+        region: r,
+        status: i % 7 === 0 ? 'transferred' : i % 5 === 0 ? 'pending_approval' : 'available',
+        mileage: 40000 + ((r * 1000 + i * 137) % 120000),
+        engineHours: 1500 + ((r * 97 + i * 53) % 5000),
+      });
+    }
+  }
+  return out;
+}
+
+const SEED_VEHICLES = genSeedVehicles();
 
 const SEED_ITEMS = [
   { id:'p1', name:'ผ้าเบรก',              category:'part',   unit:'ชุด', appliesToTypes:['รถกระเช้า','รถเครน','รถขุด'], qtyPerVehicle:1 },
@@ -62,6 +88,12 @@ const MYD = {
   STATUS_LABELS:   { available:'ไม่ใช้', pending_approval:'รออนุมัติ', transferred:'โอน' },
   CATEGORY_LABELS: { part:'อะไหล่', oil:'น้ำมัน', filter:'ไส้กรอง' },
   OILKIND_LABELS:  { engine:'น้ำมันเครื่อง', gear:'น้ำมันเฟือง', hydraulic:'น้ำมันไฮดรอลิก' },
+
+  // ----- กรย. 12 เขต / 4 ภาค -----
+  ZONE_LABELS,
+  ZONE_ORDER,
+  REGIONS,
+  regionZone,
 
   SEED_VEHICLES,
   SEED_ITEMS,

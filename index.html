@@ -28,6 +28,14 @@
   .wsteps.sm .wstep{padding:10px 12px;font-size:12.5px;gap:8px}
   .wsteps.sm .wstep .num{width:24px;height:24px;font-size:12px}
   .wsteps.sm .wstep .lbl{display:block}
+  /* ขั้นที่ 2: เขต (ภาค → เขต → รถ) — expandable region block */
+  .rzone{border:1px solid var(--gray-200);border-radius:var(--r-md);margin-bottom:8px;overflow:hidden;background:#fff}
+  .rzone-head{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;background:var(--gray-50)}
+  .rzone-head:hover{background:var(--gray-100)}
+  .rzone-caret{color:var(--gray-500);font-size:20px;flex-shrink:0}
+  .rzone-count{color:var(--gray-500);font-size:13px;margin-right:auto}
+  .rzone-allchk{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--gray-700);cursor:pointer;white-space:nowrap;flex-shrink:0}
+  .rzone-body{padding:12px 14px;border-top:1px solid var(--gray-200)}
 </style>
 </head>
 <body>
