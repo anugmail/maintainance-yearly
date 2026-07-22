@@ -7,7 +7,8 @@
 // โครงข้อมูล (plain objects):
 // vehicle: { id, plate, vehicleType, criteria, status, mileage, engineHours }
 // item:    { id, name, category, oilKind?, unit, appliesToTypes:[], qtyPerVehicle }
-// plan:    { planName, criteria, selectedVehicleIds:[], quarter, year, preparedConfirmed, workNumber, approvalStatus }
+// plan:    { planName, criteria, selectedVehicleIds:[], quarter, year, preparedConfirmed, workNumber, approvalStatus,
+//            partsRequisitioned, travelPlan:{location,dateFrom,dateTo,perDiem,lodging,travel}|null, travelConfirmed }
 
 const MASTER_KEY = 'maintaind.yearly.master.v1';
 const PLAN_KEY = 'maintaind.yearly.plan.v1';
@@ -43,6 +44,9 @@ const INITIAL_PLAN = {
   preparedConfirmed: false,
   workNumber: null,
   approvalStatus: 'draft',
+  partsRequisitioned: false,
+  travelPlan: null,
+  travelConfirmed: false,
 };
 
 // order used to sort deriveItems() output: part(0) -> oil(1) -> filter(2)

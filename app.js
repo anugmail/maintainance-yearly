@@ -34,6 +34,7 @@ function toast(m) {
 // เฟส 2-6 ยังไม่มี logic ความสำเร็จของตัวเอง (มาใน task ถัดไปเมื่อลงมือแต่ละเฟส)
 function isPhaseComplete(id) {
   if (id === 'master-plan') return MYD.loadPlan().approvalStatus === 'approved';
+  if (id === 'procurement') return MYD.loadPlan().travelConfirmed === true;
   return false;
 }
 
@@ -71,6 +72,7 @@ function goPhase(id) {
     return;
   }
   state.phase = id;
+  state.sub = 1; // เปลี่ยนเฟส -> รีเซ็ต sub-step wizard ของเฟสใหม่ให้เริ่มขั้น 1 เสมอ
   renderStepper();
   renderPhase();
   window.scrollTo({ top: 0 });
@@ -89,6 +91,10 @@ function renderPlaceholder(id) {
 function renderPhase() {
   if (state.phase === 'master-plan') {
     renderMasterPlan();
+    return;
+  }
+  if (state.phase === 'procurement') {
+    renderProcurement();
     return;
   }
   $('phase').innerHTML = renderPlaceholder(state.phase);
@@ -452,6 +458,295 @@ function renderApprovedSummary(plan) {
     </div>`;
 
   $('btnGoNextPhase').addEventListener('click', () => goPhase('procurement'));
+}
+
+// ================================================================
+// ================= PROCUREMENT WIZARD (Phase 2) =================
+// ================================================================
+// sub-stepper 3 ขั้น (ใช้ state.sub ร่วมกับเฟส 1 — goPhase() รีเซ็ตเป็น 1
+// ทุกครั้งที่เปลี่ยนเฟส) เขียน/อ่านผ่าน MYD.loadPlan()/MYD.savePlan() เช่นกัน
+// เข้าเฟส 2 ครั้งใด ถ้า travelConfirmed แล้ว ข้าม wizard ไปแสดงสรุปยืนยันเลย
+
+const PROC_STEPS = [
+  { no: 1, label: 'เบิกอะไหล่' },
+  { no: 2, label: 'แผนเดินทาง' },
+  { no: 3, label: 'ทวน + ยืนยัน' },
+];
+
+function renderProcurement() {
+  const plan = MYD.loadPlan();
+  if (plan.travelConfirmed === true) {
+    renderProcurementConfirmed(plan);
+    return;
+  }
+  if (!state.sub) state.sub = 1;
+  renderProcWizard(plan);
+}
+
+// ----- sub-nav -----
+function goProcSub(n) {
+  if (n < 1 || n > 3) return;
+  state.sub = n;
+  renderProcurement();
+  window.scrollTo({ top: 0 });
+}
+
+function nextProcSub() {
+  const plan = MYD.loadPlan();
+  if (!validateProcSub(plan, state.sub)) return;
+  if (state.sub >= 3) return;
+  goProcSub(state.sub + 1);
+}
+
+function backProcSub() {
+  if (state.sub <= 1) return;
+  goProcSub(state.sub - 1);
+}
+
+function validateProcSub(plan, sub) {
+  if (sub === 1) return !!plan.partsRequisitioned;
+  if (sub === 2) {
+    const tp = plan.travelPlan;
+    return !!(tp && tp.location && tp.location.trim() && tp.dateFrom && tp.dateTo);
+  }
+  return true;
+}
+
+function updateProcPrimaryEnabled(plan) {
+  const btn = $('btnPrimaryProc');
+  if (!btn) return;
+  btn.disabled = !validateProcSub(plan, state.sub);
+}
+
+// ----- wizard shell -----
+function renderProcWizard(plan) {
+  const primaryLabel = state.sub === 3 ? 'ยืนยันแผนเดินทาง' : 'ถัดไป';
+  const primaryDisabled = !validateProcSub(plan, state.sub);
+
+  $('phase').innerHTML = `
+    <div class="card">
+      <div class="wsteps sm">${PROC_STEPS.map(s => {
+        const active = s.no === state.sub;
+        const passed = s.no < state.sub;
+        const cls = ['wstep'];
+        if (active) cls.push('active');
+        if (passed) cls.push('passed');
+        if (s.no > state.sub) cls.push('locked');
+        return `<div class="${cls.join(' ')}" onclick="goProcSub(${s.no})">
+          <span class="num">${passed ? '✓' : s.no}</span>
+          <span class="lbl">${esc(s.label)}</span>
+        </div>`;
+      }).join('')}</div>
+      <div id="procBody">${renderProcSubBody(plan)}</div>
+      <div class="actions">
+        <button class="btn btn-g" id="btnBackProc" ${state.sub === 1 ? 'disabled' : ''}>ย้อนกลับ</button>
+        <button class="btn btn-p" id="btnPrimaryProc" ${primaryDisabled ? 'disabled' : ''}>${esc(primaryLabel)}</button>
+      </div>
+    </div>`;
+
+  bindProcSubBody(plan);
+
+  $('btnBackProc').addEventListener('click', backProcSub);
+  $('btnPrimaryProc').addEventListener('click', () => {
+    if (state.sub === 3) confirmTravelPlan(plan);
+    else nextProcSub();
+  });
+}
+
+function renderProcSubBody(plan) {
+  if (state.sub === 1) return renderProcStep1(plan);
+  if (state.sub === 2) return renderProcStep2(plan);
+  return renderProcStep3(plan);
+}
+
+function bindProcSubBody(plan) {
+  if (state.sub === 1) bindProcStep1(plan);
+  else if (state.sub === 2) bindProcStep2(plan);
+  // ขั้น 3 อ่านอย่างเดียว ไม่มี event ผูก (ปุ่มยืนยันอยู่ที่ actions footer)
+}
+
+// ----- ขั้น 1: เบิกอะไหล่ -----
+function renderProcStep1(plan) {
+  const master = MYD.loadMaster();
+  const selectedVehicles = master.vehicles.filter(v => (plan.selectedVehicleIds || []).includes(v.id));
+  const lines = MYD.deriveItems(selectedVehicles, master.items);
+
+  const groups = ['part', 'oil', 'filter'].map(cat => {
+    const catLines = lines.filter(l => l.item.category === cat);
+    if (!catLines.length) return '';
+    const rows = catLines.map(l => `
+      <tr>
+        <td>${esc(l.item.name)}</td>
+        <td class="num">${esc(l.item.qtyPerVehicle)}</td>
+        <td class="num">${esc(l.vehicleCount)}</td>
+        <td class="num">${esc(l.totalQty)}</td>
+        <td>${esc(l.item.unit)}</td>
+      </tr>`).join('');
+    return `
+      <div class="sect">${esc(MYD.CATEGORY_LABELS[cat])}</div>
+      <div class="tblwrap">
+        <table class="tbl">
+          <thead><tr><th>ชื่อ</th><th>ต่อคัน</th><th>จำนวนรถ</th><th>รวม</th><th>หน่วย</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="sect">ขั้นที่ 1: เบิกอะไหล่ (สรุปรายการจากแผน)</div>
+    <div class="sub">รถที่เข้าแผน ${selectedVehicles.length} คัน — รายการนี้คำนวณอัตโนมัติจากรถที่เลือกไว้ในเฟส 1</div>
+    ${groups || `<div class="empty">ไม่มีรายการที่เกี่ยวข้องกับรถที่เลือก</div>`}
+    <div style="margin-top:14px">
+      ${plan.partsRequisitioned
+        ? `<span class="badge b-ok">ส่งคำขอแล้ว</span>`
+        : `<button class="btn btn-o" id="btnRequisition">ส่งคำขอเบิกอะไหล่</button>`}
+    </div>`;
+}
+
+function bindProcStep1(plan) {
+  const btn = $('btnRequisition');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    plan.partsRequisitioned = true;
+    MYD.savePlan(plan);
+    toast('ส่งคำขอเบิกอะไหล่สำเร็จ');
+    renderProcWizard(plan);
+  });
+}
+
+// ----- ขั้น 2: ทำแผนเดินทาง -----
+function ensureTravelPlan(plan) {
+  if (!plan.travelPlan) {
+    plan.travelPlan = { location: '', dateFrom: '', dateTo: '', perDiem: 0, lodging: 0, travel: 0 };
+  }
+  return plan.travelPlan;
+}
+
+function renderProcStep2(plan) {
+  const tp = plan.travelPlan || {};
+  return `
+    <div class="sect">ขั้นที่ 2: ทำแผนเดินทาง</div>
+    <div class="fgrid">
+      <div class="f sp4">
+        <label>สถานที่บำรุงรักษา</label>
+        <div class="in"><span class="ms">place</span>
+          <input type="text" id="fLocation" placeholder="เช่น คลังพัสดุ กฟก.3 นครสวรรค์" value="${esc(tp.location || '')}">
+        </div>
+      </div>
+      <div class="f sp2">
+        <label>จากวันที่</label>
+        <div class="in noic"><input type="date" id="fDateFrom" value="${esc(tp.dateFrom || '')}"></div>
+      </div>
+      <div class="f sp2">
+        <label>ถึงวันที่</label>
+        <div class="in noic"><input type="date" id="fDateTo" value="${esc(tp.dateTo || '')}"></div>
+      </div>
+      <div class="f">
+        <label>ค่าเบี้ยเลี้ยง (บาท)</label>
+        <div class="in noic"><input type="number" min="0" id="fPerDiem" value="${esc(tp.perDiem ?? 0)}"></div>
+      </div>
+      <div class="f">
+        <label>ค่าที่พัก (บาท)</label>
+        <div class="in noic"><input type="number" min="0" id="fLodging" value="${esc(tp.lodging ?? 0)}"></div>
+      </div>
+      <div class="f">
+        <label>ค่าเดินทาง (บาท)</label>
+        <div class="in noic"><input type="number" min="0" id="fTravel" value="${esc(tp.travel ?? 0)}"></div>
+      </div>
+    </div>`;
+}
+
+function bindProcStep2(plan) {
+  const tp = ensureTravelPlan(plan);
+
+  $('fLocation').addEventListener('input', e => {
+    tp.location = e.target.value;
+    MYD.savePlan(plan);
+    updateProcPrimaryEnabled(plan);
+  });
+  $('fDateFrom').addEventListener('input', e => {
+    tp.dateFrom = e.target.value;
+    MYD.savePlan(plan);
+    updateProcPrimaryEnabled(plan);
+  });
+  $('fDateTo').addEventListener('input', e => {
+    tp.dateTo = e.target.value;
+    MYD.savePlan(plan);
+    updateProcPrimaryEnabled(plan);
+  });
+  $('fPerDiem').addEventListener('input', e => {
+    tp.perDiem = Number(e.target.value) || 0;
+    MYD.savePlan(plan);
+  });
+  $('fLodging').addEventListener('input', e => {
+    tp.lodging = Number(e.target.value) || 0;
+    MYD.savePlan(plan);
+  });
+  $('fTravel').addEventListener('input', e => {
+    tp.travel = Number(e.target.value) || 0;
+    MYD.savePlan(plan);
+  });
+}
+
+// ----- ขั้น 3: ทวน + ยืนยัน -----
+function renderProcStep3(plan) {
+  const tp = plan.travelPlan || {};
+  const total = (tp.perDiem || 0) + (tp.lodging || 0) + (tp.travel || 0);
+
+  return `
+    <div class="sect">ขั้นที่ 3: ทวนแผนเดินทาง + ยืนยัน</div>
+    <div class="fgrid">
+      <div class="f sp4"><label>สถานที่บำรุงรักษา</label><div>${esc(tp.location || '-')}</div></div>
+      <div class="f sp2"><label>จากวันที่</label><div>${esc(tp.dateFrom || '-')}</div></div>
+      <div class="f sp2"><label>ถึงวันที่</label><div>${esc(tp.dateTo || '-')}</div></div>
+      <div class="f"><label>ค่าเบี้ยเลี้ยง</label><div>${esc(tp.perDiem || 0)} บาท</div></div>
+      <div class="f"><label>ค่าที่พัก</label><div>${esc(tp.lodging || 0)} บาท</div></div>
+      <div class="f"><label>ค่าเดินทาง</label><div>${esc(tp.travel || 0)} บาท</div></div>
+      <div class="f sp4"><label>รวมค่าใช้จ่าย</label><div><b>${esc(total)} บาท</b></div></div>
+    </div>`;
+}
+
+function confirmTravelPlan(plan) {
+  plan.travelConfirmed = true;
+  MYD.savePlan(plan);
+  toast('ยืนยันแผนเดินทางสำเร็จ');
+  renderStepper(); // เฟส 2 กลายเป็น passed, เฟส 3 ปลดล็อก
+  renderProcurement();
+}
+
+// ----- สรุปหลังยืนยัน (แทนที่ wizard เมื่อ travelConfirmed===true) -----
+function renderProcurementConfirmed(plan) {
+  const selectedVehicles = MYD.loadMaster().vehicles.filter(v => (plan.selectedVehicleIds || []).includes(v.id));
+  const tp = plan.travelPlan || {};
+  const total = (tp.perDiem || 0) + (tp.lodging || 0) + (tp.travel || 0);
+
+  $('phase').innerHTML = `
+    <div class="card">
+      <div class="sect">เบิก/จัดหา + แผนเดินทาง — ยืนยันแล้ว</div>
+      <span class="badge b-ok" style="font-size:15px;padding:6px 16px">แผนเดินทางยืนยันแล้ว</span>
+      <div class="fgrid" style="margin-top:16px">
+        <div class="f sp4"><label>สถานที่บำรุงรักษา</label><div>${esc(tp.location || '-')}</div></div>
+        <div class="f sp2"><label>จากวันที่</label><div>${esc(tp.dateFrom || '-')}</div></div>
+        <div class="f sp2"><label>ถึงวันที่</label><div>${esc(tp.dateTo || '-')}</div></div>
+        <div class="f"><label>ค่าเบี้ยเลี้ยง</label><div>${esc(tp.perDiem || 0)} บาท</div></div>
+        <div class="f"><label>ค่าที่พัก</label><div>${esc(tp.lodging || 0)} บาท</div></div>
+        <div class="f"><label>ค่าเดินทาง</label><div>${esc(tp.travel || 0)} บาท</div></div>
+        <div class="f sp4"><label>รวมค่าใช้จ่าย</label><div><b>${esc(total)} บาท</b></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="sect">📨 ส่ง Noti แจ้งเจ้าของรถ ${selectedVehicles.length} คัน + กรย. วันที่เข้าตรวจ</div>
+      <div class="sub">ระบบส่งการแจ้งเตือนอัตโนมัติแล้ว (mock)</div>
+    </div>
+    <div class="card">
+      <div class="actions">
+        <button class="btn btn-o" id="btnPeaLife">ทำใบนำจ่าย (PEA Life)</button>
+        <button class="btn btn-p" id="btnGoNextPhaseProc">ไปเฟสถัดไป →</button>
+      </div>
+    </div>`;
+
+  $('btnPeaLife').addEventListener('click', () => toast('สร้างใบนำจ่าย (PEA Life) สำเร็จ (mock)'));
+  $('btnGoNextPhaseProc').addEventListener('click', () => goPhase('maintenance'));
 }
 
 // ================= INIT =================
