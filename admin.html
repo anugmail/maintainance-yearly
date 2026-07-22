@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ข้อมูลหลัก (Master Data) — Maintain-D (Mock)</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300..600,0..1,0" rel="stylesheet">
+<link rel="stylesheet" href="design-system/tokens.css">
+<link rel="stylesheet" href="design-system/components.css">
+<script src="ui-components.js"></script><!-- shared components (window.UIC) -->
+<style>
+  /* ---------- เฉพาะหน้านี้ — layout ของ modal overlay เท่านั้น ไม่มีสี hardcode (ใช้ var(--*) ทั้งหมด) ---------- */
+  .modal-ov{position:fixed;inset:0;background:color-mix(in srgb, var(--gray-900) 45%, transparent);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px;overflow-y:auto}
+  .modal-ov .card{width:100%;max-width:560px;max-height:90vh;overflow-y:auto;margin:auto}
+  .rowline{display:flex;align-items:center;justify-content:flex-end;gap:2px}
+  .iconbtn{border:none;background:none;cursor:pointer;color:var(--gray-500);padding:4px;border-radius:var(--r-sm)}
+  .iconbtn .ms{font-size:20px}
+  .iconbtn:hover{color:var(--primary-600);background:var(--gray-100)}
+  .iconbtn.danger:hover{color:var(--error-600)}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <div class="vlogo">VMS<em>+</em></div>
+    <a class="nv" href="index.html" id="nav-flow" title="Flow"><span class="ms">event_note</span></a>
+    <div class="nv on" id="nav-admin" title="Admin — ข้อมูลหลัก"><span class="ms">settings</span></div>
+  </aside>
+
+  <div class="work">
+    <div class="topbar">
+      <span class="ms">account_circle</span>
+      <span>ผู้ดูแลระบบ</span>
+    </div>
+
+    <main class="content">
+      <div class="draft">โหมดผู้ดูแลระบบ (Master Data)</div>
+      <h1 class="page-title">ข้อมูลหลัก (Master Data)</h1>
+      <div class="seg" id="adminTabs" style="max-width:460px">
+        <div class="sg sel" data-tab="vehicles">ข้อมูลรถ</div>
+        <div class="sg" data-tab="items">อะไหล่ · น้ำมัน · ไส้กรอง</div>
+      </div>
+      <div id="adminBody"></div>
+    </main>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="mock-yearly.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
