@@ -316,11 +316,34 @@ SEED_ITEMS: [
 
 ---
 
-# Phase 2–6 — โครงเฟสถัดไป (Outline — จะแตกเป็น task ระดับ step เมื่อเริ่มเฟสนั้น)
+# Phase 2 — เบิก/จัดหา + แผนเดินทาง (สายตรวจเอง)
 
-> เดินสาย **ตรวจเอง (กบก.)** ต่อยอดจาก plan ที่มี workNumber แล้ว แต่ละเฟสเพิ่ม field ใน plan + แทน `renderPlaceholder` ด้วยหน้าจริงทีละเฟส (รูปแบบ/verify เหมือน Phase 1)
+`renderProcurement()` ใน app.js = wizard 3 ขั้น · ต้องมาหลัง Phase 1 อนุมัติแล้ว (มี `workNumber`) · ใช้ `state.sub` ร่วม โดย `goPhase()` reset `state.sub=1` ทุกครั้งที่สลับเฟส
 
-- **Phase 2 — เบิก/จัดหา + แผนเดินทาง:** เบิกอะไหล่ (mock) → ทำแผนเดินทาง (เบี้ยเลี้ยง/ที่พัก/เดินทาง, สถานที่, ช่วงวันเดินทาง — reuse `UIC.dayPicker`) → ยืนยัน → mock Noti เจ้าของรถ/กรย. → ทำใบนำจ่าย (PEA Life mock). Field: `travelPlan`, `partsRequisitioned`
+**Field ใหม่ใน plan (INITIAL_PLAN):** `partsRequisitioned:false` · `travelPlan:null` (→ `{location,dateFrom,dateTo,perDiem,lodging,travel}`) · `travelConfirmed:false`
+**`isPhaseComplete('procurement')`** = `plan.travelConfirmed === true` (เพื่อปลดล็อกเฟส 3)
+
+## Task 2.1: renderProcurement wizard (เบิกอะไหล่ → แผนเดินทาง → ยืนยัน)
+
+**Files:** Modify `mock-yearly.js` (เพิ่ม field ใน INITIAL_PLAN), `app.js` (แทน placeholder เฟส `procurement` + แก้ `goPhase` reset `state.sub` + ขยาย `isPhaseComplete`)
+
+**Interfaces:**
+- **ขั้น 1 — เบิกอะไหล่ (ระบบขออะไหล่):** recap `MYD.deriveItems(selectedVehicles, items)` (ตารางสรุปรวม เหมือน Master Plan ขั้น 3) + ปุ่ม "ส่งคำขอเบิกอะไหล่" → `plan.partsRequisitioned=true` + toast + แสดง `.badge b-ok` "ส่งคำขอแล้ว"; ปุ่มถัดไป disabled จน `partsRequisitioned`
+- **ขั้น 2 — ทำแผนเดินทาง:** ฟอร์ม `.fgrid`/`.f`: สถานที่บำรุงรักษา (text), จากวันที่ (date), ถึงวันที่ (date), ค่าเบี้ยเลี้ยง (number บาท), ค่าที่พัก (number บาท), ค่าเดินทาง (number บาท) → เขียน `plan.travelPlan`; ถัดไป disabled จน `location`+`dateFrom`+`dateTo` ครบ
+- **ขั้น 3 — ทวน + ยืนยัน:** สรุปแผนเดินทาง + รวมค่าใช้จ่าย (`perDiem+lodging+travel`) + ปุ่ม "ยืนยันแผนเดินทาง" → `plan.travelConfirmed=true`, savePlan → แสดง: mock "📨 ส่ง Noti แจ้งเจ้าของรถ N คัน + กรย. วันที่เข้าตรวจ" (`.card`) + ปุ่ม "ทำใบนำจ่าย (PEA Life)" (mock toast) + ปุ่ม "ไปเฟสถัดไป →" (`goPhase('maintenance')`); stepper เฟส 2 กลายเป็น `passed`
+- เมื่อ `plan.travelConfirmed===true` แล้วกลับเข้าเฟส 2 → แสดง**สรุปยืนยันเลย** (ไม่เริ่ม wizard ใหม่) เหมือน Master Plan ตอน approved
+
+- [ ] **Step 1:** เพิ่ม field ใน `INITIAL_PLAN` (mock-yearly.js): `partsRequisitioned:false, travelPlan:null, travelConfirmed:false` (node test เดิมยังต้อง PASS)
+- [ ] **Step 2:** แก้ `goPhase()` ให้ reset `state.sub=1`; ขยาย `isPhaseComplete()` ให้ `'procurement'`→`travelConfirmed`
+- [ ] **Step 3:** เขียน `renderProcurement()` 3 ขั้น + wire `renderPhase()` เฟส `procurement`
+- [ ] **Step 4: verify (browser)** happy path: อนุมัติ Phase 1 → เข้าเฟส 2 → เบิกอะไหล่ → กรอกแผนเดินทาง → ยืนยัน → เห็น Noti + ปุ่มใบนำจ่าย → เฟส 3 ปลดล็อก; reload plan ยังอยู่
+- [ ] **Step 5: commit + push** — `git commit -m "feat: phase 2 procurement + travel plan wizard"; git push origin main`
+
+---
+
+# Phase 3–6 — โครงเฟสถัดไป (Outline — จะแตกเป็น task ระดับ step เมื่อเริ่มเฟสนั้น)
+
+> เดินสาย **ตรวจเอง (กบก.)** ต่อยอดจาก plan ที่มี workNumber แล้ว แต่ละเฟสเพิ่ม field ใน plan + แทน `renderPlaceholder` ด้วยหน้าจริงทีละเฟส (รูปแบบ/verify เหมือน Phase 1–2)
 - **Phase 3 — ดำเนินการบำรุงรักษา:** กรย.เตรียมของที่จุดรวมงาน → ถ่ายรูปก่อน (mock upload) → บันทึกซ่อม+ยืนยันอะไหล่จริง+ไมล์+ชม. → เก็บตัวอย่างน้ำมันไฮดรอลิก → ถ่ายรูปหลัง → หน่วยพัสดุรับทราบ. Field: `results[]`
 - **Phase 4 — ตรวจรับ:** ตรวจข้อมูล → ผ่าน → คืนอะไหล่/น้ำมันที่ไม่ได้ใช้. Field: `inspectionPassed`, `returnedItems[]`
 - **Phase 5 — จัดทำรายงาน:** ตรวจสภาพไฟฟ้า/น้ำมัน/ไฮดรอลิก → บันทึกผลตรวจน้ำมัน → mock Noti → ครบทุกคัน → ผู้บังคับบัญชาตรวจประวัติ → ปิดงาน. Field: `oilTestResult`, `closed`
