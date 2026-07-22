@@ -4,17 +4,19 @@
 
 **Goal:** สร้าง prototype แบบ static HTML (คลิกเล่นได้จริง ไม่ต้อง build) ของ flow *งานบำรุงรักษาตามวาระ (To-be)* เดินตาม happy path **สายตรวจเอง (กบก.)** ครบ 6 เฟส โดยลงมือ **Phase 1 — Master Plan** ก่อน พร้อมหน้า **Admin (Master Data)** แยกต่างหาก — **ให้แนวเดียวกับ prototype รอบเก่า** (`Maintenance-Request-Form/`) โดย **ใช้ design-system ร่วมกัน**
 
-**Architecture:** Static HTML + vanilla JS + CSS (ไม่มี build step) เปิดผ่าน `http.server`. โครงแบบ **app-shell VMS Plus desktop**: `.shell` (sidebar `.side` + `.work`) และ stepper 6 เฟสแบบ chevron `.wsteps`. State เก็บใน `localStorage` (คีย์ `maintaind.yearly.*`). **แชร์ design-system + ui-components.js จากโฟลเดอร์รอบเก่าผ่าน relative link** (ไม่ก็อป — แหล่งความจริงเดียว). แต่ละเฟส/ขั้นเป็นฟังก์ชัน `render...()` ที่วาด DOM จาก state.
+**Architecture:** Static HTML + vanilla JS + CSS (ไม่มี build step) เปิดผ่าน `http.server`. โครงแบบ **app-shell VMS Plus desktop**: `.shell` (sidebar `.side` + `.work`) และ stepper 6 เฟสแบบ chevron `.wsteps`. State เก็บใน `localStorage` (คีย์ `maintaind.yearly.*`). **repo แยกอิสระ (self-contained) สำหรับ GitHub Pages** — **vendored (ก็อป) design-system + ui-components.js เข้ามาในโฟลเดอร์** แล้วลิงก์ local (ไม่ลิงก์ข้ามโฟลเดอร์). แต่ละเฟส/ขั้นเป็นฟังก์ชัน `render...()` ที่วาด DOM จาก state.
 
 **Tech Stack:** HTML5 · vanilla JS (ES2020, no framework) · CSS (design-system กลาง) · localStorage · IBM Plex Sans Thai + Material Symbols (Google Fonts) · logic ทดสอบด้วย `node` · UI verify ด้วย Playwright + Chrome ที่ติดเครื่อง (ตาม verify skill ของ `Maintenance-Request-Form/`)
 
 ## Global Constraints
 
 - **ที่ตั้ง:** ไฟล์ prototype อยู่ใน `Maintenance-Request/maintainance-yearly/` (ห้ามแก้ `code-maintainD/`; ห้ามแก้ไฟล์ใน `Maintenance-Request-Form/` — แค่ **ลิงก์อ้างอิง** เท่านั้น)
-- **แชร์ design-system (ลิงก์ ไม่ก็อป):** ทุกหน้า HTML ต้อง `<link>` ไปที่
-  - `../Maintenance-Request-Form/design-system/tokens.css`
-  - `../Maintenance-Request-Form/design-system/components.css`
-  - และ `<script src="../Maintenance-Request-Form/ui-components.js">` (window.UIC — reuse `vehicleCard` ได้)
+- **Vendored design-system (self-contained repo):** ก็อป `design-system/{tokens,components}.css` + `ui-components.js` มาไว้ในโฟลเดอร์นี้แล้ว (ทำเสร็จแล้ว ตั้งต้นจาก `Maintenance-Request-Form/` commit `bc3be43`). ทุกหน้า HTML ต้อง `<link>`/`<script>` แบบ **local**:
+  - `<link rel="stylesheet" href="design-system/tokens.css">`
+  - `<link rel="stylesheet" href="design-system/components.css">`
+  - `<script src="ui-components.js"></script>` (window.UIC — reuse `vehicleCard` ได้)
+  - ห้ามลิงก์ข้ามไป `../Maintenance-Request-Form/` (repo นี้ต้องเปิด Pages ได้เดี่ยว). ถ้าจะปรับ token แก้ที่ต้นทางแล้ว re-sync ตาม `README.md`
+- **GitHub (self-contained repo):** repo นี้ push เป็น `github.com/anugmail/maintainance-yearly` แยกจาก repo อื่น (แบบเดียวกับ `Maintenance-Request-Form`) · มี `.nojekyll` + `README.md` แล้ว · Pages URL = `https://anugmail.github.io/maintainance-yearly/`
 - **ห้าม hardcode สี:** ใช้ CSS variables/คลาสจาก design-system เท่านั้น (เช่น `var(--primary-600)`, `.btn-p`, `.card`, `.tbl`, `.wsteps`, `.sect`, `.badge`, `.veh`) — ห้ามใส่ hex สีเองในหน้า
 - **สีหลัก design-system เก่า:** `--primary-600:#A80689` (ปุ่ม/active), hover `--primary-500:#CF07AA` — ยึดตาม tokens.css เดิม
 - **ภาษา UI:** ไทยทั้งหมด · ปี = **พ.ศ.** (default ปัจจุบัน = **2569**, ไทรมาสปัจจุบัน = **Q3**)
@@ -22,7 +24,7 @@
 - **สถานะรถ:** `available`=ไม่ใช้ · `pending_approval`=รออนุมัติ · `transferred`=โอน
 - **เกณฑ์:** `truck`=ทรัค · `net`=เนต · **หมวดรายการ:** `part`=อะไหล่ · `oil`=น้ำมัน(oilKind: engine/gear/hydraulic) · `filter`=ไส้กรอง
 - **localStorage keys:** `maintaind.yearly.master.v1` (ข้อมูลหลัก: รถ+รายการ) · `maintaind.yearly.plan.v1` (แผนที่กำลังสร้าง) — corrupt JSON ต้อง fallback เป็น seed ไม่ crash
-- **Serve เพื่อทดสอบ:** `cd Maintenance-Request && python3 -m http.server 8124 --bind 127.0.0.1` แล้วเปิด `http://127.0.0.1:8124/maintainance-yearly/index.html` (serve จาก `Maintenance-Request/` เพื่อให้ path `../Maintenance-Request-Form/...` resolve) — **ห้าม `file://`**
+- **Serve เพื่อทดสอบ:** `cd maintainance-yearly && python3 -m http.server 8124 --bind 127.0.0.1` แล้วเปิด `http://127.0.0.1:8124/index.html` (serve จากในโฟลเดอร์เอง เพราะ self-contained) — **ห้าม `file://`**
 - **ทุก Task จบด้วย commit** ที่ทดสอบผ่าน/verify ได้จริง
 
 ---
@@ -30,7 +32,9 @@
 ## File Structure
 
 ```
-Maintenance-Request/maintainance-yearly/
+Maintenance-Request/maintainance-yearly/          # = git repo (github.com/anugmail/maintainance-yearly)
+  README.md               # อธิบายโฟลเดอร์ + ลิงก์ + note vendored (มีแล้ว)
+  .nojekyll               # GitHub Pages marker (มีแล้ว)
   plan.md                 # ไฟล์นี้
   maintannance-yearly.md  # สรุป flow (มีอยู่แล้ว)
   index.html              # แอปหลัก: .shell + sidebar + 6-phase .wsteps + จุด mount เฟส
@@ -38,10 +42,12 @@ Maintenance-Request/maintainance-yearly/
   admin.html              # หน้า Admin (Master Data) แยกต่างหาก
   admin.js                # admin logic: CRUD รถ + รายการ (เขียน localStorage)
   mock-yearly.js          # window.MYD: seed data + storage + logic (deriveItems/workNumber) + label maps
-  test/                   # โฟลเดอร์เทสต์ logic (รันด้วย node)
-    logic.test.mjs        # เทสต์ deriveItems + workNumber
+  design-system/          # VENDORED (ก็อปจาก Maintenance-Request-Form @bc3be43) — มีแล้ว
+    tokens.css  components.css
+  ui-components.js        # VENDORED (window.UIC) — มีแล้ว
+  test/
+    logic.test.mjs        # เทสต์ deriveItems + workNumber (รันด้วย node)
 ```
-แชร์ (ลิงก์ ไม่ก็อป): `../Maintenance-Request-Form/design-system/{tokens,components}.css`, `../Maintenance-Request-Form/ui-components.js`
 
 **หลักการแยกไฟล์:** `mock-yearly.js` = data + logic ล้วน (เทสต์ได้ด้วย node) · `app.js` = flow · `admin.js` = admin — แยกความรับผิดชอบชัด ไฟล์ละหน้าที่
 
@@ -194,7 +200,7 @@ SEED_ITEMS: [
 - Create: `maintainance-yearly/app.js`
 
 **Interfaces:**
-- `index.html`: โครง `.shell` — `.side` (โลโก้ + nav icon 2 อัน: "Flow" active, "Admin — ข้อมูลหลัก" ลิงก์ `admin.html`) + `.work` (`.topbar` + `.content` มี `<div class="draft">` แถบ Draft + `#stepper` + `#phase` จุด mount). โหลด fonts + shared css/js + `mock-yearly.js` + `app.js`
+- `index.html`: โครง `.shell` — `.side` (โลโก้ + nav icon 2 อัน: "Flow" active, "Admin — ข้อมูลหลัก" ลิงก์ `admin.html`) + `.work` (`.topbar` + `.content` มี `<div class="draft">` แถบ Draft + `#stepper` + `#phase` จุด mount). โหลด fonts (Google) + local `design-system/tokens.css` + `design-system/components.css` + `ui-components.js` + `mock-yearly.js` + `app.js`
 - `app.js`: state `{ phase:'master-plan', ... }`, `renderStepper()` วาด `.wsteps` 6 เฟส (active=เฟสปัจจุบัน, passed=เฟสที่ complete, เฟสถัดไปคลิกได้เมื่อเฟสก่อน complete), `goPhase(id)`, `renderPhase()` เรียก `renderMasterPlan()` (เฟส 1) หรือ `renderPlaceholder(phase)` (เฟส 2–6). เฟส 1 complete เมื่อ `MYD.loadPlan().approvalStatus==='approved'`
 - Produces ฟังก์ชัน global: `goPhase`, `toast(msg)` (reuse pattern เดิม), `renderPhase`
 
@@ -218,7 +224,7 @@ SEED_ITEMS: [
 - Create: `maintainance-yearly/admin.js`
 
 **Interfaces:**
-- `admin.html`: โครง `.shell` เหมือน index (sidebar: "Flow" ลิงก์ `index.html`, "Admin" active) + `.content` มี `<div class="draft">โหมดผู้ดูแลระบบ (Master Data)</div>` + แท็บ 2 อัน (ปุ่ม `.seg`): "ข้อมูลรถ" / "อะไหล่-น้ำมัน-ไส้กรอง" + `#adminBody`. โหลด shared css/js + `mock-yearly.js` + `admin.js`
+- `admin.html`: โครง `.shell` เหมือน index (sidebar: "Flow" ลิงก์ `index.html`, "Admin" active) + `.content` มี `<div class="draft">โหมดผู้ดูแลระบบ (Master Data)</div>` + แท็บ 2 อัน (ปุ่ม `.seg`): "ข้อมูลรถ" / "อะไหล่-น้ำมัน-ไส้กรอง" + `#adminBody`. โหลด fonts + local `design-system/*.css` + `ui-components.js` + `mock-yearly.js` + `admin.js`
 - `admin.js`: `renderVehicles()` วาด `.tbl` (ทะเบียน/ประเภท/เกณฑ์/สถานะ `.badge`/ไมล์/ชม.) จาก `MYD.loadMaster().vehicles`; `renderItems()` วาด `.tbl` แยกกลุ่มหมวด. แท็บสลับด้วย state `tab`
 
 - [ ] **Step 1:** เขียน `admin.html` (shell + แท็บ + mount)
@@ -327,9 +333,9 @@ SEED_ITEMS: [
 - **Logic:** `cd maintainance-yearly && node test/logic.test.mjs` → PASS
 - **UI (browser):** ใช้แนวเดียวกับ verify skill ของ `Maintenance-Request-Form/`:
   ```bash
-  cd /Users/anu.p/PEA/Maintain-D/Maintenance-Request && python3 -m http.server 8124 --bind 127.0.0.1
+  cd /Users/anu.p/PEA/Maintain-D/Maintenance-Request/maintainance-yearly && python3 -m http.server 8124 --bind 127.0.0.1
   ```
-  ขับด้วย Playwright + Chrome ที่ติดเครื่อง (`executablePath` ตาม verify skill), เปิด `http://127.0.0.1:8124/maintainance-yearly/index.html`
+  ขับด้วย Playwright + Chrome ที่ติดเครื่อง (`executablePath` ตาม verify skill), เปิด `http://127.0.0.1:8124/index.html`
 - **Regression:** ล้าง localStorage → index.html แสดง default (stepper 6 เฟส, เฟส1 active) · admin แสดง seed 8 รถ/8 รายการ · corrupt `maintaind.yearly.*` (`{{{broken`) → ไม่ crash (fallback seed)
 
 ## Self-Review

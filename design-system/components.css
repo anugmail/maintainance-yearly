@@ -1,0 +1,234 @@
+/* ============================================================
+   Maintain-D Components  (v0.1 — 17 ก.ค. 2569)
+   Component กลางของระบบซ่อมบำรุงรถ — ใช้คู่กับ tokens.css เสมอ:
+     <link rel="stylesheet" href="../design-system/tokens.css">
+     <link rel="stylesheet" href="../design-system/components.css">
+   + โหลดฟอนต์ IBM Plex Sans Thai และ Material Symbols Outlined
+   ============================================================ */
+
+/* ---------- Base ---------- */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:#E9EAEC;color:var(--gray-700);font-size:var(--fs-body);line-height:var(--lh)}
+.ms{font-family:'Material Symbols Outlined';font-weight:normal;font-style:normal;display:inline-block;line-height:1;vertical-align:middle;font-size:22px;-webkit-font-smoothing:antialiased}
+.hidden{display:none!important}
+.empty{color:var(--gray-400);font-size:var(--fs-sm);text-align:center;padding:14px 0}
+
+/* ---------- App shell ---------- */
+.app{max-width:1120px;margin:0 auto;min-height:100dvh;background:var(--gray-50);box-shadow:var(--shadow-app);display:flex;flex-direction:column}
+.draft{background:var(--warning-50);border-bottom:1px solid var(--warning-200);color:#93370D;font-size:12px;padding:6px 16px;text-align:center}
+
+/* ---------- Header + Stepper ---------- */
+header{background:var(--grad-header);color:#fff;padding:16px 24px 14px}
+header .bar{display:flex;align-items:center;gap:10px}
+header .logo{background:#fff;color:var(--primary-600);font-weight:700;border-radius:10px;padding:3px 8px;font-size:14px}
+header h1{font-size:var(--fs-h1);font-weight:600;flex:1}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px;align-items:start;max-width:640px}
+.steps .st{text-align:center;font-size:var(--fs-xs);color:rgba(255,255,255,.75)}
+.steps .st .dot{height:4px;border-radius:var(--r-pill);background:rgba(255,255,255,.35);margin-bottom:4px}
+.steps .st.active{color:#fff;font-weight:600}
+.steps .st.active .dot,.steps .st.passed .dot{background:#fff}
+
+/* ---------- Card ---------- */
+.card{background:#fff;border:1px solid var(--gray-200);border-radius:var(--r-lg);padding:18px;margin-bottom:14px}
+.card h2,h2.ttl{font-size:var(--fs-h2);color:var(--gray-900);font-weight:600;margin-bottom:4px}
+.sub{font-size:var(--fs-sm);color:var(--gray-500);margin-bottom:12px}
+
+/* ---------- Form ---------- */
+label.fl{display:block;font-size:var(--fs-sm);font-weight:500;color:var(--gray-700);margin:12px 0 6px}
+input[type=text],textarea,select{width:100%;border:1px solid var(--gray-300);border-radius:var(--r-sm);padding:10px 12px;font:inherit;color:var(--gray-900);background:#fff}
+input:focus,textarea:focus{outline:2px solid var(--primary-50);border-color:var(--primary-500)}
+.search{position:relative}
+.search .ms{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--gray-400)}
+.search input{padding-left:38px}
+
+/* ---------- Buttons ---------- */
+.btn{border:none;border-radius:var(--r-sm);padding:9px 16px;font:inherit;font-weight:600;cursor:pointer}
+.btn-p{background:var(--primary-600);color:#fff}
+.btn-p:hover{background:var(--primary-500)}
+.btn-o{background:#fff;color:var(--primary-600);border:1.5px solid var(--primary-600)}
+.btn-g{background:var(--gray-100);color:var(--gray-500)}
+.btn:disabled{background:var(--gray-100);color:var(--gray-400);cursor:not-allowed;border:none}
+
+/* ---------- Qty stepper ---------- */
+.qty{display:flex;align-items:center;border:1px solid var(--gray-300);border-radius:var(--r-sm);overflow:hidden}
+.qty button{border:none;background:#fff;width:32px;height:34px;font-size:17px;cursor:pointer;color:var(--primary-600)}
+.qty span{min-width:34px;text-align:center;font-weight:600;color:var(--gray-900)}
+
+/* ---------- Chip (multi-select) ---------- */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--gray-300);border-radius:var(--r-pill);padding:7px 14px;font-size:13.5px;cursor:pointer;background:#fff;color:var(--gray-700)}
+.chip.sel{background:var(--primary-600);border-color:var(--primary-600);color:#fff;font-weight:500}
+
+/* ---------- Segmented (single-select) ---------- */
+.seg{display:flex;gap:8px}
+.seg .sg{flex:1;text-align:center;border:1.5px solid var(--gray-300);border-radius:var(--r-sm);padding:8px 4px;font-size:var(--fs-sm);cursor:pointer;background:#fff}
+.seg .sg.sel{border-color:var(--primary-600);background:var(--primary-25);color:var(--primary-600);font-weight:600}
+
+/* ---------- Badge สถานะ ---------- */
+.badge{display:inline-flex;align-items:center;gap:4px;border-radius:var(--r-pill);padding:2px 10px;font-size:12px;font-weight:600}
+.b-ok{background:var(--success-50);color:var(--success-600)}
+.b-low{background:var(--warning-50);color:var(--warning-700)}
+.b-out{background:var(--error-50);color:var(--error-600)}
+.b-brand{background:var(--primary-50);color:var(--primary-600)}
+
+/* ---------- Tile (การ์ดเลือกแบบ VMS Plus) ---------- */
+.tile{border-radius:var(--r-lg);padding:18px 12px;text-align:center;cursor:pointer;color:#fff;border:3px solid transparent}
+.tile .ms{font-size:34px;margin-bottom:8px}
+.tile b{display:block;font-size:15px}
+.tile small{font-size:11.5px;opacity:.85}
+.tile-magenta{background:var(--primary-600)}
+.tile-blue{background:var(--secondary-600)}
+.tile.sel{border-color:var(--gray-900);box-shadow:var(--shadow-pop)}
+
+/* ---------- Footer ปุ่มนำทาง ---------- */
+.footer{display:flex;gap:10px;justify-content:flex-end;padding:4px 24px 36px}
+.footer .btn{min-width:170px;padding:12px 24px;font-size:15px}
+
+/* ---------- Toast ---------- */
+.toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:var(--gray-900);color:#fff;border-radius:10px;padding:10px 18px;font-size:13.5px;z-index:50;opacity:0;transition:.25s;pointer-events:none;max-width:380px;text-align:center}
+.toast.show{opacity:1}
+
+/* ============================================================
+   Web shell — อิงหน้าจริง VMS Plus (screenshot "สร้างคำขอใช้ยานพาหนะ")
+   ============================================================ */
+
+/* ---------- โครงหน้า: sidebar + topbar + content ---------- */
+.shell{display:flex;min-height:100dvh;background:#fff}
+.side{width:96px;flex-shrink:0;background:#fff;border-right:1px solid var(--gray-200);display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:6px;position:sticky;top:0;height:100dvh}
+.side .vlogo{font-weight:800;font-size:26px;color:var(--primary-600);margin-bottom:16px;line-height:1}
+.side .vlogo em{color:#F5A623;font-style:normal}
+.side .nv{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--gray-500);cursor:pointer}
+.side .nv:hover{background:var(--gray-100)}
+.side .nv.on{background:var(--gray-100);color:var(--primary-600)}
+.work{flex:1;min-width:0;display:flex;flex-direction:column;background:#FCFCFD}
+.topbar{background:#fff;border-bottom:1px solid var(--gray-100);padding:13px 28px;display:flex;justify-content:flex-end;align-items:center;gap:18px;color:var(--gray-600)}
+.content{padding:22px 32px 48px;width:100%;max-width:1500px}
+
+/* ---------- Breadcrumb + ชื่อหน้า ---------- */
+.crumbs{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--gray-500);margin-bottom:14px;flex-wrap:wrap}
+.crumbs .ms{font-size:18px}
+.crumbs .sep{color:var(--gray-300)}
+.crumbs .cur{color:var(--primary-600)}
+.page-title{font-size:28px;font-weight:700;color:var(--gray-900);margin-bottom:20px}
+
+/* ---------- Stepper แบบลูกศร (chevron) ---------- */
+.wsteps{display:flex;background:#fff;border:1px solid var(--gray-200);border-radius:12px;margin-bottom:26px}
+.wstep{flex:1;display:flex;align-items:center;gap:12px;padding:17px 18px;position:relative;color:var(--gray-500);font-size:14.5px;min-width:0}
+.wstep .num{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--gray-300);display:flex;align-items:center;justify-content:center;font-weight:600;flex-shrink:0;background:#fff}
+.wstep .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wstep.active{color:var(--primary-600);font-weight:600}
+.wstep.active .num{border-color:var(--primary-600);color:var(--primary-600)}
+.wstep.passed .num{background:var(--primary-600);border-color:var(--primary-600);color:#fff}
+.wstep:not(:last-child)::before,.wstep:not(:last-child)::after{content:'';position:absolute;right:0;width:1px;height:52%;background:var(--gray-200)}
+.wstep:not(:last-child)::before{top:0;transform-origin:bottom center;transform:rotate(-16deg)}
+.wstep:not(:last-child)::after{bottom:0;transform-origin:top center;transform:rotate(16deg)}
+
+/* ---------- หัวข้อ section แถบ magenta ---------- */
+.sect{display:flex;gap:10px;align-items:center;font-weight:700;color:var(--gray-900);font-size:17px;margin:8px 0 2px}
+.sect::before{content:'';width:4px;height:20px;background:var(--primary-600);border-radius:2px;flex-shrink:0}
+
+/* ---------- ฟอร์มแบบหน้าใน: label บน + ไอคอนในช่อง ---------- */
+.fgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px 24px;margin:16px 0 26px}
+.f label{display:block;font-size:14px;font-weight:600;color:var(--gray-900);margin-bottom:8px}
+.f label small{color:var(--gray-500);font-weight:400}
+.f .in{position:relative}
+.f .in>.ms{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--gray-500);font-size:20px;pointer-events:none}
+.f .in input,.f .in select{height:46px;border-radius:10px;padding:0 12px 0 40px}
+.f .in.noic input{padding-left:12px}
+.f textarea{border-radius:10px}
+.f.ro .in input{border-style:dashed;background:var(--gray-50);color:var(--gray-700)}
+.f.err .in input,.f.err textarea{border-color:var(--error-500)}
+.f .help{font-size:12.5px;color:var(--error-600);margin-top:6px}
+
+/* ---------- Radio (สี primary เหมือนหน้าจริง) ---------- */
+.rads{display:flex;gap:22px;align-items:center;min-height:46px;flex-wrap:wrap}
+.rads label{display:flex;gap:8px;align-items:center;font-size:14.5px;color:var(--gray-700);cursor:pointer;font-weight:400;margin:0}
+input[type=radio]{accent-color:var(--primary-600);width:18px;height:18px;cursor:pointer}
+
+/* ---------- ช่องจำนวน − n + ---------- */
+.numfld{display:flex;align-items:center;border:1px solid var(--gray-300);border-radius:10px;height:46px;background:#fff}
+.numfld button{flex:0 0 44px;height:100%;border:none;background:none;font-size:20px;color:var(--gray-600);cursor:pointer}
+.numfld span{flex:1;text-align:center;font-weight:600;color:var(--gray-900)}
+
+/* ---------- แถวปุ่มท้ายฟอร์ม ---------- */
+.actions{display:flex;justify-content:flex-end;gap:12px;padding-top:10px}
+.actions .btn{min-width:170px;padding:12px 24px;font-size:15px}
+
+/* ---------- Column span (desktop เท่านั้น) ---------- */
+@media(min-width:761px){.sp2{grid-column:span 2}.sp4{grid-column:1/-1}}
+@media(max-width:1100px){.fgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* ---------- Responsive (มือถือ ≤760px) ---------- */
+@media(max-width:760px){
+  header{padding:14px 16px 12px}
+  .steps{max-width:none}
+  .footer{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--gray-200);padding:12px 16px;z-index:20}
+  .footer .btn{flex:1;min-width:0}
+  .side{display:none}
+  .topbar{padding:12px 16px}
+  .content{padding:16px;padding-bottom:100px}
+  .page-title{font-size:22px;margin-bottom:14px}
+  .fgrid{grid-template-columns:1fr;gap:14px}
+  .wsteps{margin-bottom:18px}
+  .wstep{padding:12px 10px;gap:8px}
+  .wstep .lbl{display:none}
+  .wstep.active .lbl{display:block}
+  .actions{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--gray-200);padding:12px 16px;z-index:20}
+  .actions .btn{flex:1;min-width:0}
+}
+
+/* ============================================================
+   v0.3 — component สำหรับ flow กบค. + ติดตามสถานะ
+   ============================================================ */
+
+/* ---------- Badge ตัวเลขบนไอคอน sidebar ---------- */
+.nv{position:relative}
+.nv .cnt{position:absolute;top:3px;right:3px;background:var(--error-500);color:#fff;font-size:10px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700}
+
+/* ---------- แถวรายการงาน/เรื่อง ---------- */
+.job{display:flex;gap:14px;align-items:center;background:#fff;border:1px solid var(--gray-200);border-radius:var(--r-md);padding:14px 16px;cursor:pointer;margin-bottom:10px;flex-wrap:wrap}
+.job:hover{border-color:var(--primary-500)}
+.job .no{font-weight:700;color:var(--gray-900)}
+.job .meta{font-size:12.5px;color:var(--gray-500)}
+.job .sp{flex:1;min-width:0}
+
+/* ---------- Timeline ประวัติสถานะ ---------- */
+.tl{list-style:none;margin:10px 0;padding:0}
+.tl li{position:relative;padding:0 0 16px 26px;font-size:14px;color:var(--gray-700)}
+.tl li::before{content:'';position:absolute;left:5px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--gray-300)}
+.tl li::after{content:'';position:absolute;left:9px;top:17px;bottom:-1px;width:2px;background:var(--gray-200)}
+.tl li:last-child::after{display:none}
+.tl li.on::before{background:var(--primary-600)}
+.tl .when{font-size:12px;color:var(--gray-400)}
+
+/* ---------- Checklist ตรวจสภาพ ---------- */
+.chk{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.chk label{display:flex;gap:10px;align-items:center;font-size:14.5px;color:var(--gray-700);cursor:pointer}
+input[type=checkbox]{accent-color:var(--primary-600);width:17px;height:17px;cursor:pointer;flex-shrink:0}
+
+/* ============================================================
+   v0.11 — Shared UI components (ui-components.js / window.UIC)
+   ย้ายมาจาก style เฉพาะหน้า mock → ใช้ได้ทุกหน้า (mock/admin/อื่น ๆ)
+   ============================================================ */
+/* ---------- การ์ดเลือกรถ (vehicleCard: list | grid) ---------- */
+.vlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin:14px 0 6px}
+.vlist.sq{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+.vlist.sq .veh{flex-direction:column;text-align:center;aspect-ratio:1/1;justify-content:center;gap:6px;overflow:hidden}
+.vlist.sq .veh .meta{font-size:11.5px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.veh{display:flex;gap:12px;align-items:center;border:1.5px solid var(--gray-200);border-radius:var(--r-md);padding:12px;cursor:pointer;background:#fff}
+.veh:hover{border-color:var(--primary-500)}
+.veh.sel{border-color:var(--primary-600);background:var(--primary-25)}
+.veh .ic{width:44px;height:44px;border-radius:10px;background:var(--primary-50);color:var(--primary-600);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.veh b{color:var(--gray-900);font-size:15px}
+.veh .meta{font-size:12.5px;color:var(--gray-500)}
+
+/* ============================================================
+   v0.5 — ตารางข้อมูล (เมนูคลังอะไหล่)
+   ============================================================ */
+.tblwrap{overflow-x:auto;margin-top:12px}
+.tbl{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid var(--gray-200);border-radius:var(--r-md);overflow:hidden;font-size:13.5px}
+.tbl th{background:var(--gray-50);color:var(--gray-600);font-weight:600;text-align:left;padding:10px 14px;border-bottom:1px solid var(--gray-200);white-space:nowrap}
+.tbl td{padding:10px 14px;border-bottom:1px solid var(--gray-100);color:var(--gray-700);vertical-align:top}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tbody tr:hover td{background:var(--gray-50)}
+.tbl .num{text-align:center;font-weight:600;color:var(--gray-900)}
